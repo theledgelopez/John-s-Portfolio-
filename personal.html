@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Personal — John Vincent Lopez</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-950:#F4F2EC;
+    --ink-900:#FFFFFF;
+    --ink-800:#EDE9DD;
+    --line: rgba(21,20,15,0.10);
+    --line-strong: rgba(21,20,15,0.20);
+    --paper:#17140F;
+    --paper-dim:#57564C;
+    --paper-faint:#8C8676;
+    --amber:#C1592B;
+    --display: 'Archivo', sans-serif;
+    --body: 'Inter', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--ink-950); color:var(--paper); font-family:var(--body);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .back-link{
+    position:fixed; top:20px; left:20px; font-family:var(--mono); font-size:12.5px;
+    color:var(--paper-dim); text-decoration:none;
+  }
+  .back-link:hover{ color:var(--amber); }
+
+  .gate{
+    width:100%; max-width:380px; background:var(--ink-900); border:1px solid var(--line-strong);
+    border-radius:10px; padding:32px 28px; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.08);
+  }
+  .gate-eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--paper-faint); margin:0 0 10px; }
+  .gate h1{ font-family:var(--display); font-size:22px; font-weight:800; margin:0 0 18px; }
+  .gate input{
+    width:100%; background:var(--ink-800); border:1px solid var(--line-strong); border-radius:6px;
+    padding:11px 14px; font-size:15px; color:var(--paper); text-align:center; letter-spacing:0.1em;
+    outline:none; font-family:var(--mono); margin-bottom:12px;
+  }
+  .gate input:focus{ border-color:var(--amber); }
+  .gate button{
+    width:100%; background:var(--amber); color:#fff; border:none; border-radius:6px;
+    padding:11px; font-family:var(--display); font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .gate button:hover{ background:#A64B22; }
+  .gate-error{ color:#B3261E; font-size:13px; margin-top:10px; display:none; }
+
+  .private-content{ display:none; width:100%; max-width:720px; }
+  .private-content h1{ font-family:var(--display); font-size:26px; font-weight:800; margin:0 0 6px; }
+  .private-content .sub{ color:var(--paper-dim); font-size:14px; margin:0 0 28px; }
+  .doc-list{ display:flex; flex-direction:column; gap:12px; }
+  .doc-item{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--ink-900); border:1px solid var(--line-strong); border-radius:8px; padding:16px 18px;
+  }
+  .doc-name{ font-weight:600; font-size:14.5px; }
+  .doc-desc{ font-size:12.5px; color:var(--paper-faint); margin-top:2px; }
+  .doc-link{
+    font-family:var(--mono); font-size:12px; color:var(--amber); border:1px solid var(--amber);
+    border-radius:999px; padding:6px 14px; text-decoration:none; white-space:nowrap;
+  }
+  .doc-link:hover{ background:var(--amber); color:#fff; }
+  .empty-note{
+    text-align:center; color:var(--paper-faint); font-size:13.5px; padding:30px 20px;
+    border:1px dashed var(--line-strong); border-radius:8px;
+  }
+</style>
+</head>
+<body>
+  <a class="back-link" href="index.html">&larr; Back to portfolio</a>
+
+  <div class="gate" id="passwordGate">
+    <p class="gate-eyebrow">Private</p>
+    <h1>This page is password protected</h1>
+    <form id="gateForm">
+      <input type="password" id="gatePassword" placeholder="Enter password" autocomplete="off">
+      <button type="submit">Unlock</button>
+    </form>
+    <p class="gate-error" id="gateError">Incorrect password &mdash; try again.</p>
+  </div>
+
+  <div class="private-content" id="privateContent">
+    <h1>Personal</h1>
+    <p class="sub">Private project files &amp; documents.</p>
+    <div class="doc-list" id="docList">
+      <div class="empty-note">No documents added yet &mdash; check back soon.</div>
+    </div>
+  </div>
+
+  <script>
+    var PASSWORD_HASH = '7d91b762b534b3e2fc51995be621481d79fcf351665f828888ed759bb3ec9d56';
+    var SESSION_KEY = 'personalPageUnlocked';
+
+    var gateEl = document.getElementById('passwordGate');
+    var contentEl = document.getElementById('privateContent');
+    var form = document.getElementById('gateForm');
+    var input = document.getElementById('gatePassword');
+    var errorEl = document.getElementById('gateError');
+
+    function sha256Hex(text) {
+      var enc = new TextEncoder().encode(text);
+      return crypto.subtle.digest('SHA-256', enc).then(function(buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function(b) {
+          return b.toString(16).padStart(2, '0');
+        }).join('');
+      });
+    }
+
+    function unlock() {
+      gateEl.style.display = 'none';
+      contentEl.style.display = 'block';
+    }
+
+    // Stay unlocked for the rest of this browser session
+    try {
+      if (sessionStorage.getItem(SESSION_KEY) === '1') unlock();
+    } catch (e) { /* ignore */ }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      sha256Hex(input.value).then(function(hash) {
+        if (hash === PASSWORD_HASH) {
+          try { sessionStorage.setItem(SESSION_KEY, '1'); } catch (e) { /* ignore */ }
+          errorEl.style.display = 'none';
+          unlock();
+        } else {
+          errorEl.style.display = 'block';
+          input.value = '';
+          input.focus();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
